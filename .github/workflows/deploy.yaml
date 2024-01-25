@@ -1,0 +1,27 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      unit:
+        type: string
+        required: true
+      release_version:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      next_environment:
+        type: string
+        required: true
+
+# TODO: it could smart job that trigger another workflow, running until primary job is running, provide link to that job and status 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: deploy
+        run: |
+          gh workflow run deploy.yaml --repo 'oleksandrkudin/${{ inputs.unit }}' -f unit=${{ inputs.unit }} -f environment=${{ inputs.environment }} \
+            -f release_version=${{ inputs.release_version }} -f next_environment=${{ inputs.next_environment }}
