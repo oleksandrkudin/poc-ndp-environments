@@ -33,8 +33,7 @@ jobs:
             next_environment=$(jq --raw-output '.next_environment' $config_file)
             unit=$(basename $(dirname $config_file))
             environment=$(basename $(dirname $(dirname $config_file)))
-            jq --arg environment "$environment" --arg unit "$unit" --arg version "$version"  --arg next_environment "$next_environment" \
-              '. |= . * {$environment: {$unit: {"version": $version, "next_environment": $next_environment}}}' meta-config.json | tee -a tmp.json && mv tmp.json meta-config.json
+            jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" '. |= . * {$environment: {$unit: {"version": $version, "next_environment": $next_environment}}}' meta-config.json | tee -a tmp.json && mv tmp.json meta-config.json
           done
       
       - name: Set output
