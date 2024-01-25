@@ -1,0 +1,17 @@
+{
+  "dev": {
+    "poc-ndp-helm-chart1": {
+      "version": ""
+    }
+  },
+  "prod": {
+    "poc-ndp-helm-chart1": {
+      "version": ""
+    }
+  },
+  "test": {
+    "poc-ndp-helm-chart1": {
+      "version": ""
+    }
+  }
+}
