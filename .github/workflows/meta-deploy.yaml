@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - environments/**
+  workflow_dispatch:
 
 jobs:
   # Create 3 matrices for each environment
