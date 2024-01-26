@@ -90,7 +90,7 @@ jobs:
       deployment_required: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['changed'] }}
   
   deploy_test:
-    needs: [units, deploy_dev]
+    needs: [units]
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.test_units) }}
@@ -105,7 +105,7 @@ jobs:
       deployment_required: ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['changed'] }}
 
   deploy_prod:
-    needs: [units, deploy_test]
+    needs: [units]
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.prod_units) }}
