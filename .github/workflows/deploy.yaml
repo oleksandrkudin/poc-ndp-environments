@@ -22,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh workflow run deploy.yaml --repo 'oleksandrkudin/${{ inputs.unit }}' -f unit=${{ inputs.unit }} -f environment=${{ inputs.environment }} \
             -f release_version=${{ inputs.release_version }} -f next_environment=${{ inputs.next_environment }}
