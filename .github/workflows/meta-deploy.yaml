@@ -64,6 +64,7 @@ jobs:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.dev_units) }}
     #name: ${{ matrix.unit }} ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['version'] }} on dev
+    secrets: inherit
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
       unit: ${{ matrix.unit }}
@@ -75,7 +76,8 @@ jobs:
     needs: [units, deploy_dev]
     strategy:
       matrix:
-        unit: ${{ fromJson(needs.units.outputs.test_units) }}    
+        unit: ${{ fromJson(needs.units.outputs.test_units) }}
+    secrets: inherit
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
       unit: ${{ matrix.unit }}
@@ -87,7 +89,8 @@ jobs:
     needs: [units, deploy_test]
     strategy:
       matrix:
-        unit: ${{ fromJson(needs.units.outputs.prod_units) }}    
+        unit: ${{ fromJson(needs.units.outputs.prod_units) }}
+    secrets: inherit    
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
       unit: ${{ matrix.unit }}

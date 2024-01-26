@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: deploy
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
         run: |
           gh workflow run deploy.yaml --repo 'oleksandrkudin/${{ inputs.unit }}' -f unit=${{ inputs.unit }} -f environment=${{ inputs.environment }} \
             -f release_version=${{ inputs.release_version }} -f next_environment=${{ inputs.next_environment }}
