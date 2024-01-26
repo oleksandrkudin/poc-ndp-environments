@@ -109,7 +109,7 @@ jobs:
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.prod_units) }}
-    name: deploy_test (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }})
+    name: deploy_prod (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }})
     secrets: inherit    
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
