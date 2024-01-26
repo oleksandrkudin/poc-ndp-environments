@@ -29,5 +29,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
         run: |
-          gh workflow run deploy.yaml --repo 'oleksandrkudin/${{ inputs.unit }}' -f environment=${{ inputs.environment }} \
-            -f release_version=${{ inputs.release_version }} -f next_environment=${{ inputs.next_environment }}
+          gh workflow run deploy.yaml --repo 'oleksandrkudin/${{ inputs.unit }}' -f environment="${{ inputs.environment }}" \
+            -f release_version="${{ inputs.release_version }}" -f next_environment="${{ inputs.next_environment }}"
