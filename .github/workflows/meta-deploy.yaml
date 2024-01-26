@@ -81,6 +81,8 @@ jobs:
         unit: ${{ fromJson(needs.units.outputs.dev_units) }}
     name: deploy_dev (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['version'] }})
     secrets: inherit
+    concurrency:
+      group: deploy_dev
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
       unit: ${{ matrix.unit }}
@@ -96,6 +98,8 @@ jobs:
         unit: ${{ fromJson(needs.units.outputs.test_units) }}
     name: deploy_test (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['version'] }})
     secrets: inherit
+    concurrency:
+      group: deploy_test
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
       unit: ${{ matrix.unit }}
@@ -110,7 +114,9 @@ jobs:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.prod_units) }}
     name: deploy_prod (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }})
-    secrets: inherit    
+    secrets: inherit
+    concurrency:
+      group: deploy_prod 
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
       unit: ${{ matrix.unit }}
