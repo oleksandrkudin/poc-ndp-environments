@@ -15,11 +15,15 @@ on:
       next_environment:
         type: string
         required: true
+      deployment_required:
+        type: string
+        required: true
 
 # TODO: it could smart job that trigger another workflow, running until primary job is running, provide link to that job and status 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ inputs.deployment_required != 'true'  }}
     steps:
       - name: deploy
         env:

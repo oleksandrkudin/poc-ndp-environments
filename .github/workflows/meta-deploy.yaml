@@ -22,15 +22,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
 
+      # Implement something like dorny/paths-filter@v2.11.1
+
       - uses: dcarbone/install-jq-action@v2.1.0
         with:
           version: '1.7'
           force: true
 
       # TODO: What is environment variable length limit?
+      # TODO: environment is mentioned in two places - risk of updating
       - name: Get environments configuration
         working-directory: environments
         run: |
+          changed_files=$(git show --pretty="" --name-only HEAD)
+          echo "Changed files:"
+          echo -e "$changed_files" | sed 's/^/\t/'
+
           echo 'Create configuration using the schema: {"<env>": {"<unit>": {"version": ""}}}'
           echo '{}' | tee meta-config.json
           for config_file in $(find ./ -name config.json); do
@@ -38,7 +45,14 @@ jobs:
             next_environment=$(jq --raw-output '.next_environment' $config_file)
             unit=$(basename $(dirname $config_file))
             environment=$(basename $(dirname $(dirname $config_file)))
-            jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" '. |= . * {$environment: {$unit: {"version": $version, "next_environment": $next_environment}}}' meta-config.json | tee -a tmp.json && mv tmp.json meta-config.json
+            if [[ "$changed_files" =~ "$(echo $config_file | sed 's/\./environments/')" ]]; then
+              changed="true"
+            else
+              changed="false"
+            fi
+            jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" --arg changed "$changed" \
+              '. |= . * {$environment: {$unit: {"version": $version, "next_environment": $next_environment, "changed": $changed}}}' meta-config.json \
+              | tee -a tmp.json && mv tmp.json meta-config.json
           done
       
       - name: Set output
@@ -71,6 +85,7 @@ jobs:
       environment: dev
       release_version: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['version'] }}  
       next_environment: test
+      deployment_required: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['changed'] }}
   
   deploy_test:
     needs: [units, deploy_dev]
@@ -84,6 +99,7 @@ jobs:
       environment: test
       release_version: ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['version'] }}  
       next_environment: prod
+      deployment_required: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['changed'] }}
 
   deploy_prod:
     needs: [units, deploy_test]
@@ -97,3 +113,4 @@ jobs:
       environment: prod
       release_version: ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }}  
       next_environment: ""
+      deployment_required: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['changed'] }}
