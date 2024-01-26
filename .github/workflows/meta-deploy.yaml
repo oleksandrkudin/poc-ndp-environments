@@ -79,7 +79,7 @@ jobs:
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.dev_units) }}
-    name: ${{ github.job }} (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['version'] }})
+    name: deploy_dev (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['version'] }})
     secrets: inherit
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
@@ -94,7 +94,7 @@ jobs:
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.test_units) }}
-    name: ${{ github.job }} (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['version'] }})
+    name: deploy_test (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['version'] }})
     secrets: inherit
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
@@ -102,14 +102,14 @@ jobs:
       environment: test
       release_version: ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['version'] }}  
       next_environment: prod
-      deployment_required: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['changed'] }}
+      deployment_required: ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['changed'] }}
 
   deploy_prod:
     needs: [units, deploy_test]
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.prod_units) }}
-    name: ${{ github.job }} (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }})
+    name: deploy_test (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }})
     secrets: inherit    
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
@@ -117,4 +117,4 @@ jobs:
       environment: prod
       release_version: ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }}  
       next_environment: ""
-      deployment_required: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['changed'] }}
+      deployment_required: ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['changed'] }}
