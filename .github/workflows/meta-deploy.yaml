@@ -22,6 +22,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
 
+      - uses: dcarbone/install-jq-action
+        with:
+          version: '1.7'
+          force: true
+
       # TODO: What is environment variable length limit?
       - name: Get environments configuration
         working-directory: environments
