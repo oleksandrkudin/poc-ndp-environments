@@ -155,14 +155,22 @@ jobs:
           labels: 'automerge'
           token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
 
+      # Error: Base branch was modified. Review and try the merge again.
+      # - name: "Merge PR"
+      #   if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
+      #   uses: juliangruber/merge-pull-request-action@v1
+      #   with:
+      #     github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+      #     number:  ${{ steps.pull_request.outputs.pull-request-number }}
+      #     method: squash
+      #     repo: oleksandrkudin/poc-ndp-environments
+      
       - name: "Merge PR"
         if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
-        uses: juliangruber/merge-pull-request-action@v1
-        with:
-          github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-          number:  ${{ steps.pull_request.outputs.pull-request-number }}
-          method: squash
-          repo: oleksandrkudin/poc-ndp-environments
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ steps.pull_request.outputs.pull-request-number }} --repo ${{ github.repository }} --squash
       
       - name: "Delete branch after merge"
         if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
