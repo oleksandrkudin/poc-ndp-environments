@@ -39,7 +39,6 @@ jobs:
       # TODO: What is environment variable length limit?
       # TODO: environment is mentioned in two places - risk of updating
       - name: Get environments configuration
-        working-directory: environments
         run: |
           changed_files=$(git show --pretty="" --name-only HEAD)
           echo "Changed files:"
@@ -48,13 +47,12 @@ jobs:
           echo 'Create configuration using the schema: {"<unit>": {"version": "", "environment": "", "next_environment": ""}}'
           echo '{}' | tee meta-config.json
           for config_file in $(echo "$changed_files" | grep 'deploy-config.json'); do
-            
             version=$(jq --raw-output '.version' $config_file)
-            unit=$(basename $(dirname $config_file))
-            environment=$(basename $(dirname $(dirname $config_file)))
-            next_environment=$(jq --raw-output '.next_environment' environments/$environment/$unit/promote-config.json)
+            unit=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\2/p')
+            environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
+            next_environment=$(jq --raw-output '.next_environment' $(dirname $config_file)/promote-config.json)
             # TODO: first commit does not have previous commit and file could not exist
-            deployed_release_version=$(git show HEAD^:$environment/$unit/deploy-config.json | jq '.version')
+            deployed_release_version=$(git show HEAD^:$config_file | jq '.version')
             jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" --arg deployed_release_version "$deployed_release_version" \
               '. |= . * {$unit: {"environment": $environment, "version": $version, "next_environment": $next_environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
               | tee -a tmp.json && mv tmp.json meta-config.json
@@ -62,7 +60,6 @@ jobs:
       
       - name: Set output
         id: output
-        working-directory: environments
         run: |
           units=$(jq --compact-output '.' meta-config.json)
           echo "units=$units" | tee -a "$GITHUB_OUTPUT"
