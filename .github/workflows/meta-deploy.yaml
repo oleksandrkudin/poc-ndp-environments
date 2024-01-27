@@ -82,6 +82,8 @@ jobs:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.units) }}
     steps:
+      - uses: actions/checkout@v4.1.1
+      
       - name: Get deploy jobs status
         run: |
           deploy_job_status='${{ needs[matrix.unit].result }}'
