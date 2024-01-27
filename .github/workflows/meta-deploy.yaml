@@ -58,6 +58,8 @@ jobs:
         run: |
           units_conf=$(jq --compact-output '.' meta-config.json)
           echo "units_conf=$units_conf" | tee -a "$GITHUB_OUTPUT"
+          units=$(jq --compact-output 'keys' meta-config.json)
+          echo "units=$units" | tee -a "$GITHUB_OUTPUT"
   
   poc-ndp-helm-chart1:
     needs: [units]
