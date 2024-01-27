@@ -44,7 +44,7 @@ jobs:
           echo "Changed files:"
           echo -e "$changed_files" | sed 's/^/\t/'
 
-          echo 'Create configuration using the schema: {"<unit>": {"version": "", "environment": "", "next_environment": ""}}'
+          echo 'Create configuration using the schema: {"<unit>": {"version": "", "environment": "", "next_environment": "", "deployed_release_version": ""}}'
           echo '{}' | tee meta-config.json
           for config_file in $(echo "$changed_files" | grep 'deploy-config.json'); do
             version=$(jq --raw-output '.version' $config_file)
@@ -52,7 +52,7 @@ jobs:
             environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
             next_environment=$(jq --raw-output '.next_environment' $(dirname $config_file)/promote-config.json)
             # TODO: first commit does not have previous commit and file could not exist
-            deployed_release_version=$(git show HEAD^:$config_file | jq '.version')
+            deployed_release_version=$(git show HEAD^:$config_file | jq --raw-output '.version')
             jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" --arg deployed_release_version "$deployed_release_version" \
               '. |= . * {$unit: {"environment": $environment, "version": $version, "next_environment": $next_environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
               | tee -a tmp.json && mv tmp.json meta-config.json
@@ -67,7 +67,7 @@ jobs:
   poc-ndp-helm-chart1:
     needs: [units]
     if: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'] != '' }}
-    name: "${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].release_version }}"
+    name: "${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].version }}"
     secrets: inherit
     # TODO: with reusable workflow it is not allowed to define it here
     #environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
@@ -76,5 +76,5 @@ jobs:
     uses: oleksandrkudin/poc-ndp-helm-chart1/.github/workflows/deploy.yaml@main
     with:
       environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
-      release_version:  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].release_version }}
+      release_version:  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].version }}
       next_environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].next_environment }}
