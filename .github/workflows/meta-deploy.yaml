@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - environments/**
+      - environments/**/deploy-config.json
   workflow_dispatch:
 
 jobs:
@@ -19,6 +19,7 @@ jobs:
       dev_units_config: ${{ steps.output.outputs.dev_units_config }}
       test_units_config: ${{ steps.output.outputs.test_units_config }}
       prod_units_config: ${{ steps.output.outputs.prod_units_config }}
+      units: ${{ steps.output.outputs.units }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -40,20 +41,18 @@ jobs:
           echo "Changed files:"
           echo -e "$changed_files" | sed 's/^/\t/'
 
-          echo 'Create configuration using the schema: {"<env>": {"<unit>": {"version": ""}}}'
+          echo 'Create configuration using the schema: {"<unit>": {"version": "", "environment": "", "next_environment": ""}}'
           echo '{}' | tee meta-config.json
-          for config_file in $(find ./ -name config.json); do
+          for config_file in $(echo "$changed_files" | grep 'deploy-config.json'); do
+            
             version=$(jq --raw-output '.version' $config_file)
-            next_environment=$(jq --raw-output '.next_environment' $config_file)
             unit=$(basename $(dirname $config_file))
             environment=$(basename $(dirname $(dirname $config_file)))
-            if [[ "$changed_files" =~ "$(echo $config_file | sed 's/\./environments/')" ]]; then
-              changed="true"
-            else
-              changed="false"
-            fi
-            jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" --arg changed "$changed" \
-              '. |= . * {$environment: {$unit: {"version": $version, "next_environment": $next_environment, "changed": $changed}}}' meta-config.json \
+            next_environment=$(jq --raw-output '.next_environment' environments/$environment/$unit/promote-config.json)
+            # TODO: first commit does not have previous commit and file could not exist
+            deployed_release_version=$(git show HEAD^:environments/$environment/$unit/deploy-config.json | jq '.version')
+            jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" --arg deployed_release_version "$deployed_release_version" \
+              '. |= . * {$unit: {"environment": $environment, "version": $version, "next_environment": $next_environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
               | tee -a tmp.json && mv tmp.json meta-config.json
           done
       
@@ -61,66 +60,19 @@ jobs:
         id: output
         working-directory: environments
         run: |
-          dev_units=$(jq --compact-output '.dev | keys' meta-config.json)
-          test_units=$(jq --compact-output '.test | keys' meta-config.json)
-          prod_units=$(jq --compact-output '.prod | keys' meta-config.json)
-          dev_units_config=$(jq --compact-output '.dev' meta-config.json)
-          test_units_config=$(jq --compact-output '.test' meta-config.json)
-          prod_units_config=$(jq --compact-output '.prod' meta-config.json)
-          echo "dev_units=$dev_units" | tee -a "$GITHUB_OUTPUT"
-          echo "test_units=$test_units" | tee -a "$GITHUB_OUTPUT"
-          echo "prod_units=$prod_units" | tee -a "$GITHUB_OUTPUT"
-          echo "dev_units_config=$dev_units_config" | tee -a "$GITHUB_OUTPUT"
-          echo "test_units_config=$test_units_config" | tee -a "$GITHUB_OUTPUT"
-          echo "prod_units_config=$prod_units_config" | tee -a "$GITHUB_OUTPUT"
+          units=$(jq --compact-output '.' meta-config.json)
+          echo "units=$units" | tee -a "$GITHUB_OUTPUT"
   
-  deploy_dev:
+  poc-ndp-helm-chart1:
     needs: [units]
-    strategy:
-      matrix:
-        unit: ${{ fromJson(needs.units.outputs.dev_units) }}
-    name: deploy_dev (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['version'] }})
+    if: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'] != '' }}
+    name: "${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].release_version }}"
     secrets: inherit
+    environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
     concurrency:
-      group: deploy_dev
-    uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
+      group: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
+    uses: oleksandrkudin/poc-ndp-helm-chart1/.github/workflows/deploy.yaml@main
     with:
-      unit: ${{ matrix.unit }}
-      environment: dev
-      release_version: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['version'] }}  
-      next_environment: test
-      deployment_required: ${{ fromJson(needs.units.outputs.dev_units_config)[matrix.unit]['changed'] }}
-  
-  deploy_test:
-    needs: [units]
-    strategy:
-      matrix:
-        unit: ${{ fromJson(needs.units.outputs.test_units) }}
-    name: deploy_test (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['version'] }})
-    secrets: inherit
-    concurrency:
-      group: deploy_test
-    uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
-    with:
-      unit: ${{ matrix.unit }}
-      environment: test
-      release_version: ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['version'] }}  
-      next_environment: prod
-      deployment_required: ${{ fromJson(needs.units.outputs.test_units_config)[matrix.unit]['changed'] }}
-
-  deploy_prod:
-    needs: [units]
-    strategy:
-      matrix:
-        unit: ${{ fromJson(needs.units.outputs.prod_units) }}
-    name: deploy_prod (${{ matrix.unit }}, ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }})
-    secrets: inherit
-    concurrency:
-      group: deploy_prod 
-    uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
-    with:
-      unit: ${{ matrix.unit }}
-      environment: prod
-      release_version: ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['version'] }}  
-      next_environment: ""
-      deployment_required: ${{ fromJson(needs.units.outputs.prod_units_config)[matrix.unit]['changed'] }}
+      environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
+      release_version:  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].release_version }}
+      next_environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].next_environment }}
