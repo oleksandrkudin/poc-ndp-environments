@@ -82,7 +82,7 @@ jobs:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.units) }}
     steps:
-      - name: dashboard
+      - name: Get deploy jobs status
         run: |
           deploy_job_status='${{ needs[matrix.unit].result }}'
           if [ "$deploy_job_status" == "" ]; then
@@ -92,7 +92,7 @@ jobs:
 
           if [ "$deploy_job_status" == "success" ]; then
             badge_color="green"
-          elif [ "$deploy_job_status" == "failure" ]
+          elif [ "$deploy_job_status" == "failure" ]; then
             badge_color="red"
           else
             badge_color="grey"
