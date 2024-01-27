@@ -83,7 +83,7 @@ jobs:
         unit: ${{ fromJson(needs.units.outputs.units) }}
     steps:
       - uses: actions/checkout@v4.1.1
-      
+
       - name: Get deploy jobs status
         run: |
           deploy_job_status='${{ needs[matrix.unit].result }}'
@@ -101,14 +101,21 @@ jobs:
           fi
           echo "badge_color=$badge_color" | tee -a "$GITHUB_ENV"
       
+      - name: Create badges directory
+        run: |
+          if [ ! -d .github/badges ]; then
+            mkdir -p .github/badges
+          fi
+
+      # TODO: recommendation dedicated branch with special settings as repository can grow very large 
       - name: Generate the status badge SVG image
         uses: emibcn/badge-action@v2.0.2
         id: badge
         with:
-          label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
+          label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
           status: '${{ env.deploy_job_status }}'
           color: ${{ env.badge_color }}
-          path: ./.github/badges/${{ matrix.unit }}-${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}.svg
+          path: .github/badges/${{ matrix.unit }}-${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}.svg
       
       # TODO: Reusable pattern = make (commit) changes to repository
       - name: "Create PR"
