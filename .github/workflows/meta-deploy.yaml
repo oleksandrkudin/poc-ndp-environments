@@ -7,6 +7,10 @@ on:
       - environments/**/deploy-config.json
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   # Create 3 matrices for each environment
   # units = [], how to add each value with metadata? version, changed 
