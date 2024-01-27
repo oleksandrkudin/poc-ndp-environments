@@ -1,0 +1,6 @@
+{
+  "poc-ndp-app1":
+    [
+      {"poc-ndp-helm-chart1": "appVersion"}
+    ]
+}
