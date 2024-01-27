@@ -17,13 +17,8 @@ jobs:
   units:
     runs-on: ubuntu-latest
     outputs:
-      dev_units: ${{ steps.output.outputs.dev_units }}
-      test_units: ${{ steps.output.outputs.test_units }}
-      prod_units: ${{ steps.output.outputs.prod_units }}
-      dev_units_config: ${{ steps.output.outputs.dev_units_config }}
-      test_units_config: ${{ steps.output.outputs.test_units_config }}
-      prod_units_config: ${{ steps.output.outputs.prod_units_config }}
       units: ${{ steps.output.outputs.units }}
+      units_conf: ${{ steps.output.outputs.units_conf }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -61,20 +56,81 @@ jobs:
       - name: Set output
         id: output
         run: |
-          units=$(jq --compact-output '.' meta-config.json)
-          echo "units=$units" | tee -a "$GITHUB_OUTPUT"
+          units_conf=$(jq --compact-output '.' meta-config.json)
+          echo "units_conf=$units_conf" | tee -a "$GITHUB_OUTPUT"
   
   poc-ndp-helm-chart1:
     needs: [units]
-    if: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'] != '' }}
-    name: "${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].version }}"
+    if: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'] != '' }}
+    name: "${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].version }}"
     secrets: inherit
-    # TODO: with reusable workflow it is not allowed to define it here
-    #environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
     concurrency:
-      group: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
+      group: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }}
     uses: oleksandrkudin/poc-ndp-helm-chart1/.github/workflows/deploy.yaml@main
     with:
-      environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
-      release_version:  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].version }}
-      next_environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].next_environment }}
+      environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }}
+      release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].version }}
+      next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].next_environment }}
+
+  dashboard:
+    if: ${{ always() }}
+    needs: [units, poc-ndp-helm-chart1]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        unit: ${{ fromJson(needs.units.outputs.units) }}
+    steps:
+      - name: dashboard
+        run: |
+          deploy_job_status='${{ needs[matrix.unit].result }}'
+          if [ "$deploy_job_status" == "" ]; then
+            deploy_job_status="unknow"
+          fi
+          echo "deploy_job_status=$deploy_job_status" | tee -a "$GITHUB_ENV"
+
+          if [ "$deploy_job_status" == "success" ]; then
+            badge_color="green"
+          elif [ "$deploy_job_status" == "failure" ]
+            badge_color="red"
+          else
+            badge_color="grey"
+          fi
+          echo "badge_color=$badge_color" | tee -a "$GITHUB_ENV"
+      
+      - name: Generate the status badge SVG image
+        uses: emibcn/badge-action@v2.0.2
+        id: badge
+        with:
+          label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
+          status: '${{ env.deploy_job_status }}'
+          color: ${{ env.badge_color }}
+          path: ./.github/badges/${{ matrix.unit }}-${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}.svg
+      
+      # TODO: Reusable pattern = make (commit) changes to repository
+      - name: "Create PR"
+        id: pull_request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: '[auto-badge] ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }} :: ${{ matrix.unit }} ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }} ${{ env.deploy_job_status }}'
+          commit-message: '[auto-badge] ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }} :: ${{ matrix.unit }} ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }} ${{ env.deploy_job_status }}'
+          branch: ${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}
+          base: main
+          add-paths: '.github/badges/**'
+          # reviewers: '[]'
+          delete-branch: true
+          labels: 'automerge'
+          token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+
+      - name: "Merge PR"
+        if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
+        uses: juliangruber/merge-pull-request-action@v1
+        with:
+          github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+          number:  ${{ steps.pull_request.outputs.pull-request-number }}
+          method: squash
+          repo: oleksandrkudin/poc-ndp-environments
+      
+      - name: "Delete branch after merge"
+        if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
+        run: |
+          git push origin --delete ${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}

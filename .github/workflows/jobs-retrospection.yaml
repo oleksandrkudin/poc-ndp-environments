@@ -16,6 +16,13 @@ jobs:
       - run: |
           true
   
+  deploy_3:
+    if: ${{ 'a' == 'b' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          true
+  
   retrospection:
     if: ${{ always() }}
     needs: [deploy_1, deploy_2]
