@@ -68,7 +68,8 @@ jobs:
     if: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'] != '' }}
     name: "${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].release_version }}"
     secrets: inherit
-    environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
+    # TODO: with reusable workflow it is not allowed to define it here
+    #environment: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
     concurrency:
       group: ${{ fromJson(needs.units.outputs.units)['poc-ndp-helm-chart1'].environment }}
     uses: oleksandrkudin/poc-ndp-helm-chart1/.github/workflows/deploy.yaml@main
