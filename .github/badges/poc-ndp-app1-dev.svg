@@ -1,5 +1,5 @@
-<svg width="141.9" height="20" viewBox="0 0 1419 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="0.0.2 -&gt; 0.0.3: success">
-  <title>0.0.2 -&gt; 0.0.3: success</title>
+<svg width="141.9" height="20" viewBox="0 0 1419 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="0.0.3 -&gt; 0.0.4: success">
+  <title>0.0.3 -&gt; 0.0.4: success</title>
   <linearGradient id="a" x2="0" y2="100%">
     <stop offset="0" stop-opacity=".1" stop-color="#EEE"/>
     <stop offset="1" stop-opacity=".1"/>
@@ -11,8 +11,8 @@
     <rect width="1419" height="200" fill="url(#a)"/>
   </g>
   <g aria-hidden="true" fill="#fff" text-anchor="start" font-family="Verdana,DejaVu Sans,sans-serif" font-size="110">
-    <text x="60" y="148" textLength="798" fill="#000" opacity="0.25">0.0.2 -&gt; 0.0.3</text>
-    <text x="50" y="138" textLength="798">0.0.2 -&gt; 0.0.3</text>
+    <text x="60" y="148" textLength="798" fill="#000" opacity="0.25">0.0.3 -&gt; 0.0.4</text>
+    <text x="50" y="138" textLength="798">0.0.3 -&gt; 0.0.4</text>
     <text x="953" y="148" textLength="421" fill="#000" opacity="0.25">success</text>
     <text x="943" y="138" textLength="421">success</text>
   </g>
