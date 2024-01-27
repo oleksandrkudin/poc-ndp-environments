@@ -92,6 +92,7 @@ jobs:
       environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].environment }}
       release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].version }}
       next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].next_environment }}
+      deployment_statuses: '["${{ needs.poc-ndp-helm-chart1.result }}"]'
 
   #####################
   # Dashboard
