@@ -104,46 +104,14 @@ jobs:
     if: ${{ always() }}
     needs: [units, poc-ndp-helm-chart1, poc-ndp-app1]
     runs-on: ubuntu-latest
+    secrets: inherit
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.units) }}
-    steps:
-      - uses: actions/checkout@v4.1.1
-
-      - name: Get deploy jobs status
-        run: |
-          deploy_job_status='${{ needs[matrix.unit].result }}'
-          if [ "$deploy_job_status" == "" ]; then
-            deploy_job_status="unknow"
-          fi
-          echo "deploy_job_status=$deploy_job_status" | tee -a "$GITHUB_ENV"
-
-          if [ "$deploy_job_status" == "success" ]; then
-            badge_color="green"
-          elif [ "$deploy_job_status" == "failure" ]; then
-            badge_color="red"
-          else
-            badge_color="grey"
-          fi
-          echo "badge_color=$badge_color" | tee -a "$GITHUB_ENV"
-      
-      - name: Create badges directory
-        run: |
-          if [ ! -d .github/badges ]; then
-            mkdir -p .github/badges
-          fi
-
-      # TODO: recommendation dedicated branch with special settings as repository can grow very large 
-      - name: Generate the status badge SVG image
-        uses: emibcn/badge-action@v2.0.2
-        id: badge
-        with:
-          label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
-          status: '${{ env.deploy_job_status }}'
-          color: ${{ env.badge_color }}
-          path: .github/badges/${{ matrix.unit }}-${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}.svg
-      
-      - uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/commit_changes_pr.yaml@main
-        with:
-          title: '[auto-badge] ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }} :: ${{ matrix.unit }} ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }} ${{ env.deploy_job_status }}'
-          add-paths: '.github/badges/**'
+    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
+    with:
+      job_result: '${{ needs[matrix.unit].result }}'
+      badge_directory: '.github/badges'
+      badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
+      unit: ${{ matrix.unit }}
+      environment: ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}
