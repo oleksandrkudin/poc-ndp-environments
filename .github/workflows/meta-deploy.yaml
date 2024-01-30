@@ -39,17 +39,24 @@ jobs:
           echo "Changed files:"
           echo -e "$changed_files" | sed 's/^/\t/'
 
-          echo 'Create configuration using the schema: {"<unit>": {"version": "", "environment": "", "next_environment": "", "deployed_release_version": ""}}'
+          echo 'Create configuration using the schema: {"<unit>": <deploy-config> * {"environment": "", "next_environment": "", "deployed_release_version": ""}}'
           echo '{}' | tee meta-config.json
           for config_file in $(echo "$changed_files" | grep 'deploy-config.json'); do
-            version=$(jq --raw-output '.version' $config_file)
             unit=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\2/p')
+
+            echo "Add whole unit deploy config"
+            deploy_config=$(jq --raw-output --compact-output '.' $config_file)
+            jq --arg deploy_config "$deploy_config" --arg unit "$unit" '. |= . * {$unit: $deploy_config | fromjson}' | tee -a tmp.json && mv tmp.json meta-config.json
+
+            echo "Add meta parameters"
             environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
             next_environment=$(jq --raw-output '.next_environment' $(dirname $config_file)/promote-config.json)
-            # TODO: first commit does not have previous commit and file could not exist
-            deployed_release_version=$(git show HEAD^:$config_file | jq --raw-output '.version')
-            jq --arg environment "$environment" --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" --arg deployed_release_version "$deployed_release_version" \
-              '. |= . * {$unit: {"environment": $environment, "version": $version, "next_environment": $next_environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
+            echo "Get previous deployed version only if it is not the first commit in repository and config file exist in previous commit"
+            if [[ "$(git log -2 --oneline | wc -l)" == "2" && "$(git ls-tree -r HEAD^ --name-only)" =~ (^|$'\n')"$config_file"($'\n'|$) ]]; then
+              deployed_release_version=$(git show HEAD^:$config_file | jq --raw-output '.version')
+            fi
+            jq --arg environment "$environment" --arg unit "$unit" --arg next_environment "$next_environment" --arg deployed_release_version "$deployed_release_version" \
+              '. |= . * {$unit: {"environment": $environment, "next_environment": $next_environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
               | tee -a tmp.json && mv tmp.json meta-config.json
           done
       
@@ -78,6 +85,7 @@ jobs:
       environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }}
       release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].version }}
       next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].next_environment }}
+      app_version: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].appVersion }}
 
   # Tracking unit
   poc-ndp-app1:
