@@ -1,7 +1,7 @@
 name: meta_deploy
 
 on: 
-  push:
+  pull_request:
     branches: [main]
     paths:
       - environments/**/deploy-config.json
