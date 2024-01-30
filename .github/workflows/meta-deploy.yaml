@@ -143,39 +143,7 @@ jobs:
           color: ${{ env.badge_color }}
           path: .github/badges/${{ matrix.unit }}-${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}.svg
       
-      # TODO: Reusable pattern = make (commit) changes to repository
-      - name: "Create PR"
-        id: pull_request
-        uses: peter-evans/create-pull-request@v5
+      - uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/commit_changes_pr.yaml@main
         with:
           title: '[auto-badge] ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }} :: ${{ matrix.unit }} ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }} ${{ env.deploy_job_status }}'
-          commit-message: '[auto-badge] ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }} :: ${{ matrix.unit }} ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }} ${{ env.deploy_job_status }}'
-          branch: ${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/${{ github.job }}/${{ matrix.unit }}
-          base: main
           add-paths: '.github/badges/**'
-          # reviewers: '[]'
-          delete-branch: true
-          labels: 'automerge'
-          token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-
-      # Error: Base branch was modified. Review and try the merge again.
-      # - name: "Merge PR"
-      #   if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
-      #   uses: juliangruber/merge-pull-request-action@v1
-      #   with:
-      #     github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-      #     number:  ${{ steps.pull_request.outputs.pull-request-number }}
-      #     method: squash
-      #     repo: oleksandrkudin/poc-ndp-environments
-      
-      - name: "Merge PR"
-        if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-        run: |
-          gh pr merge ${{ steps.pull_request.outputs.pull-request-number }} --repo ${{ github.repository }} --squash
-      
-      - name: "Delete branch after merge"
-        if: ${{ steps.pull_request.outputs.pull-request-number != '' }}
-        run: |
-          git push origin --delete ${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/${{ github.job }}/${{ matrix.unit }}
