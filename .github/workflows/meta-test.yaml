@@ -1,4 +1,4 @@
-name: meta_deploy
+name: meta_test
 
 on: 
   push:
@@ -41,7 +41,7 @@ jobs:
           echo "Getting updated environment ..."
           for config_file in $(echo "$changed_files" | grep 'deploy-config.json'); do
             environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
-            if [ "$environment" != "$prev_environment" ] && [ "$prev_environment" != "" ] ;
+            if [ "$environment" != "$prev_environment" ] && [ "$prev_environment" != "" ]; then
               echo "Commit changes are expected to only one environment. More than one changed environment detected."
               exit 1
             else

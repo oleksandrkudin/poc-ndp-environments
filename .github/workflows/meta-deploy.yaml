@@ -114,7 +114,6 @@ jobs:
       group: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }}
     uses: oleksandrkudin/poc-ndp-test1/.github/workflows/deploy.yaml@main
     with:
-      unit: "poc-ndp-test1"
       environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }}
       release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].version }}
       #next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].next_environment }}
