@@ -126,7 +126,6 @@ jobs:
   dashboard:
     if: ${{ always() }}
     needs: [units, poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
-    runs-on: ubuntu-latest
     secrets: inherit
     strategy:
       matrix:
