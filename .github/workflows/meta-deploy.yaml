@@ -33,31 +33,32 @@ jobs:
 
       # TODO: What is environment variable length limit?
       # TODO: environment is mentioned in two places - risk of updating
-      - name: Get environments configuration
+      # TODO: assumed that unit is changed only in single environment. Is that the case?
+      - name: Get deployment configuration
         run: |
           changed_files=$(git show --pretty="" --name-only HEAD)
           echo "Changed files:"
           echo -e "$changed_files" | sed 's/^/\t/'
 
-          echo 'Create configuration using the schema: {"<unit>": <deploy-config> * {"environment": "", "next_environment": "", "deployed_release_version": ""}}'
+          echo 'Create configuration using the schema: {"<unit>": <deploy-config> * {"environment": "", "deployed_release_version": ""}}'
           echo '{}' | tee meta-config.json
           for config_file in $(echo "$changed_files" | grep 'deploy-config.json'); do
             unit=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\2/p')
 
             echo "Add whole unit deploy config"
             deploy_config=$(jq --raw-output --compact-output '.' $config_file)
-            jq --arg deploy_config "$deploy_config" --arg unit "$unit" '. |= . * {$unit: $deploy_config | fromjson}' | tee -a tmp.json && mv tmp.json meta-config.json
+            jq --arg deploy_config "$deploy_config" --arg unit "$unit" '. |= . * {$unit: $deploy_config | fromjson}' | tee tmp.json && mv tmp.json meta-config.json
 
             echo "Add meta parameters"
             environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
-            next_environment=$(jq --raw-output '.next_environment' $(dirname $config_file)/promote-config.json)
+            # next_environment=$(jq --raw-output '.next_environment' $(dirname $config_file)/promote-config.json)
             echo "Get previous deployed version only if it is not the first commit in repository and config file exist in previous commit"
             if [[ "$(git log -2 --oneline | wc -l)" == "2" && "$(git ls-tree -r HEAD^ --name-only)" =~ (^|$'\n')"$config_file"($'\n'|$) ]]; then
               deployed_release_version=$(git show HEAD^:$config_file | jq --raw-output '.version')
             fi
-            jq --arg environment "$environment" --arg unit "$unit" --arg next_environment "$next_environment" --arg deployed_release_version "$deployed_release_version" \
-              '. |= . * {$unit: {"environment": $environment, "next_environment": $next_environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
-              | tee -a tmp.json && mv tmp.json meta-config.json
+            jq --arg environment "$environment" --arg unit "$unit" --arg deployed_release_version "$deployed_release_version" \
+              '. |= . * {$unit: {"environment": $environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
+              | tee tmp.json && mv tmp.json meta-config.json
           done
       
       - name: Set output
@@ -84,7 +85,7 @@ jobs:
     with:
       environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }}
       release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].version }}
-      next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].next_environment }}
+      # next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].next_environment }}
       app_version: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].appVersion }}
 
   # Tracking unit
@@ -100,9 +101,23 @@ jobs:
       unit: "poc-ndp-app1"
       environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].environment }}
       release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].version }}
-      next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].next_environment }}
+      #next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].next_environment }}
       deployment_statuses: '["${{ needs.poc-ndp-helm-chart1.result }}"]'
 
+  # Test unit
+  poc-ndp-test1:
+    needs: [units]
+    if: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'] != '' }}
+    name: "${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }} : poc-ndp-test1 : ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].version }}"
+    secrets: inherit
+    concurrency:
+      group: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }}
+    uses: oleksandrkudin/poc-ndp-test1/.github/workflows/deploy.yaml@main
+    with:
+      unit: "poc-ndp-test1"
+      environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }}
+      release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].version }}
+      #next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].next_environment }}
 
   #####################
   # Dashboard
@@ -110,7 +125,7 @@ jobs:
 
   dashboard:
     if: ${{ always() }}
-    needs: [units, poc-ndp-helm-chart1, poc-ndp-app1]
+    needs: [units, poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
     runs-on: ubuntu-latest
     secrets: inherit
     strategy:
@@ -119,7 +134,8 @@ jobs:
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
     with:
       job_result: '${{ needs[matrix.unit].result }}'
-      badge_directory: '.github/badges'
+      badge_directory: '.github/badges/deployments'
+      pr_auto_prefix: 'auto-deploy-badge'
       badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
       unit: ${{ matrix.unit }}
       environment: ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}

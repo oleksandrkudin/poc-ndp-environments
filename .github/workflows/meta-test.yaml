@@ -1,0 +1,141 @@
+name: meta_deploy
+
+on: 
+  push:
+    branches: [main]
+    paths:
+      - environments/**/deploy-config.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  units:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.config.outputs.environment }}
+      units: ${{ steps.config.outputs.units_conf }}
+      units_conf: ${{ steps.config.outputs.units_conf }}
+      promote_units_conf: ${{ steps.promote_config.outputs.promote_units_conf }}
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0  # TODO: otherwise git show --pretty="" --name-only HEAD show all files
+      
+      - uses: dcarbone/install-jq-action@v2.1.0
+        with:
+          version: '1.7'
+          force: true
+      
+      # Get evironment that was changed. Because there is mapping between environments and tests to run.
+      # TODO: Is it possible that more than one environment is changed in PR commit?
+      - name: Get test configuration
+        id: config
+        run: |
+          changed_files=$(git show --pretty="" --name-only HEAD)
+          echo "Changed files:"
+          echo -e "$changed_files" | sed 's/^/\t/'
+
+          echo "Getting updated environment ..."
+          for config_file in $(echo "$changed_files" | grep 'deploy-config.json'); do
+            environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
+            if [ "$environment" != "$prev_environment" ] && [ "$prev_environment" != "" ] ;
+              echo "Commit changes are expected to only one environment. More than one changed environment detected."
+              exit 1
+            else
+              prev_environment=$environment
+            fi
+          done
+          echo "environment=$environment" | tee -a "$GITHUB_OUTPUT"
+          echo "environment=$environment" | tee -a "$GITHUB_ENV"
+
+          echo "Getting test to run for environment ..."
+          units="[]"
+          echo '{}' | tee meta-config.json
+          for config_file in $(find environments/$environment -name test-config.json); do
+            unit=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\2/p')
+            tmp_units=$(echo "$units" | jq --compact-output --arg unit "$unit"  '. |= . + [$unit]')
+            units=$tmp_units
+
+            echo "Add whole unit deploy config"
+            version=$(jq --raw-output '.version' environments/environment/$unit/deploy-config.json)
+            jq --arg unit "$unit" --arg version "$version" \
+              '. |= . * {$unit: {"version": $version}}' meta-config.json \
+              | tee tmp.json && mv tmp.json meta-config.json
+          done
+          echo "units=$units" | tee -a "$GITHUB_OUTPUT"
+          echo "units_conf=$(jq --compact-output '.' meta-config.json)" | tee -a "$GITHUB_OUTPUT"
+      
+      - name: Get promote configuration
+        id: promote_config
+        run: |
+          echo '{}' | tee meta-promote-config.json
+          for config_file in $(find environments/$environment -name deploy-config.json); do
+            unit=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\2/p')
+            next_environment=$(jq --raw-output '.next_environment' environments/$environment/$unit/promote-config.json)
+            if [ "$next_environment" != "" ]; then
+              version=$(jq --raw-output '.version' $config_file)
+              next_environment_version=$(jq --raw-output '.version' environments/$next_environment/$unit/deploy-config.json)
+              if [ "$version" != "$next_environment_version" ]; then
+                jq --arg unit "$unit" --arg version "$version" --arg next_environment "$next_environment" \
+                  '. |= . * {$unit: {"version": $version, "next_environment": $next_environment}}' meta-promote-config.json \
+                  | tee tmp.json && mv tmp.json meta-promote-config.json
+              fi
+            fi
+          done
+          echo "promote_units_conf=$(jq --compact-output '.' meta-promote-config.json)" | tee -a "$GITHUB_OUTPUT"
+          
+
+  #####################
+  # Tests
+  #####################
+
+  poc-ndp-test1:
+    needs: [units]
+    if: ${{ contains(fromJson(needs.units.outputs.units), 'poc-ndp-test1') }}
+    name: "${{ needs.units.outputs.environment }} : poc-ndp-test1"
+    secrets: inherit
+    uses: oleksandrkudin/poc-ndp-test1/.github/workflows/test.yaml@main
+    with:
+      environment: ${{ needs.units.outputs.environment }}
+
+  #####################
+  # Promote
+  #####################
+
+  promote:
+    needs: [units, poc-ndp-test1]
+    secrets: inherit
+    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/update_environment.yaml@main
+    strategy:
+      matrix:
+        unit: ${{ needs.units.outputs.promote_units }}
+    with:
+      unit: ${{ matrix.unit }}
+      environment: ${{ needs.units.outputs.promote_units_conf[matrix.unit].next_environment }}
+      release_version: ${{ needs.units.outputs.promote_units_conf[matrix.unit].version }}
+
+
+  #####################
+  # Dashboard
+  #####################
+
+  dashboard:
+    if: ${{ always() }}
+    needs: [poc-ndp-test1]
+    runs-on: ubuntu-latest
+    secrets: inherit
+    strategy:
+      matrix:
+        unit: ${{ fromJson(needs.units.outputs.units) }}
+    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
+    with:
+      job_result: '${{ needs[matrix.unit].result }}'
+      badge_directory: '.github/badges/tests'
+      pr_auto_prefix: 'auto-test-badge'
+      badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
+      unit: ${{ matrix.unit }}
+      environment: ${{ needs.units.outputs.environment }}
+    
