@@ -87,12 +87,14 @@ jobs:
     secrets: inherit
     concurrency:
       group: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].environment }}
-    uses: oleksandrkudin/poc-ndp-app1/.github/workflows/deploy.yaml@main
+    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/null_deploy.yaml@main
     with:
+      unit: "poc-ndp-app1"
       environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].environment }}
       release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].version }}
       next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].next_environment }}
       deployment_statuses: '["${{ needs.poc-ndp-helm-chart1.result }}"]'
+
 
   #####################
   # Dashboard
