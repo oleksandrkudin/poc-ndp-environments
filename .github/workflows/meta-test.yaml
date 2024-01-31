@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.config.outputs.environment }}
-      units: ${{ steps.config.outputs.units_conf }}
+      units: ${{ steps.config.outputs.units }}
       units_conf: ${{ steps.config.outputs.units_conf }}
       promote_units_conf: ${{ steps.promote_config.outputs.promote_units_conf }}
       promote_units: ${{ steps.promote_config.outputs.promote_units }}
