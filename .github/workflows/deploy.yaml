@@ -3,31 +3,55 @@ name: deploy
 on:
   workflow_call:
     inputs:
-      unit:
-        type: string
-        required: true
-      release_version:
-        type: string
-        required: true
-      environment:
-        type: string
-        required: true
-      next_environment:
-        type: string
-        required: true
-      deployment_required:
+      units_conf:
         type: string
         required: true
 
-# TODO: it could smart job that trigger another workflow, running until primary job is running, provide link to that job and status 
+
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    if: ${{ inputs.deployment_required == 'true' }}
-    steps:
-      - name: deploy
-        env:
-          GH_TOKEN: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
-        run: |
-          gh workflow run deploy.yaml --repo 'oleksandrkudin/${{ inputs.unit }}' -f environment="${{ inputs.environment }}" \
-            -f release_version="${{ inputs.release_version }}" -f next_environment="${{ inputs.next_environment }}"
+  #####################
+  # Units
+  #####################
+
+  # Deployment unit
+  poc-ndp-helm-chart1:
+    if: ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'] != '' }}
+    name: "${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].version }}"
+    secrets: inherit
+    concurrency:
+      group: ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].environment }}
+    uses: oleksandrkudin/poc-ndp-helm-chart1/.github/workflows/deploy.yaml@main
+    with:
+      environment: ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].environment }}
+      release_version:  ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].version }}
+      # next_environment: ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].next_environment }}
+      app_version: ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].appVersion }}
+
+  # Tracking unit
+  poc-ndp-app1:
+    needs: [poc-ndp-helm-chart1]
+    if: ${{ fromJson(inputs.units_conf)['poc-ndp-app1'] != '' }}
+    name: "${{ fromJson(inputs.units_conf)['poc-ndp-app1'].environment }} : poc-ndp-app1 : ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].version }}"
+    secrets: inherit
+    concurrency:
+      group: ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].environment }}
+    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/null_deploy.yaml@main
+    with:
+      unit: "poc-ndp-app1"
+      environment: ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].environment }}
+      release_version:  ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].version }}
+      #next_environment: ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].next_environment }}
+      deployment_statuses: '["${{ needs.poc-ndp-helm-chart1.result }}"]'
+
+  # Test unit
+  poc-ndp-test1:
+    if: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'] != '' }}
+    name: "${{ fromJson(inputs.units_conf)['poc-ndp-test1'].environment }} : poc-ndp-test1 : ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].version }}"
+    secrets: inherit
+    concurrency:
+      group: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].environment }}
+    uses: oleksandrkudin/poc-ndp-test1/.github/workflows/deploy.yaml@main
+    with:
+      environment: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].environment }}
+      release_version:  ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].version }}
+      #next_environment: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].next_environment }}

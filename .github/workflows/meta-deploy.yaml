@@ -72,71 +72,29 @@ jobs:
           units=$(jq --compact-output 'keys' meta-config.json)
           echo "units=$units" | tee -a "$GITHUB_OUTPUT"
 
-  #####################
-  # Units
-  #####################
-
-  # Deployment unit
-  poc-ndp-helm-chart1:
+  deploy:
     needs: [units]
-    if: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'] != '' }}
-    name: "${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].version }}"
     secrets: inherit
-    concurrency:
-      group: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }}
-    uses: oleksandrkudin/poc-ndp-helm-chart1/.github/workflows/deploy.yaml@main
+    uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
-      environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].environment }}
-      release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].version }}
-      # next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].next_environment }}
-      app_version: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-helm-chart1'].appVersion }}
-
-  # Tracking unit
-  poc-ndp-app1:
-    needs: [units, poc-ndp-helm-chart1]
-    if: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'] != '' }}
-    name: "${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].environment }} : poc-ndp-app1 : ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].version }}"
-    secrets: inherit
-    concurrency:
-      group: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].environment }}
-    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/null_deploy.yaml@main
-    with:
-      unit: "poc-ndp-app1"
-      environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].environment }}
-      release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].version }}
-      #next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-app1'].next_environment }}
-      deployment_statuses: '["${{ needs.poc-ndp-helm-chart1.result }}"]'
-
-  # Test unit
-  poc-ndp-test1:
-    needs: [units]
-    if: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'] != '' }}
-    name: "${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }} : poc-ndp-test1 : ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].deployed_release_version }} ->  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].version }}"
-    secrets: inherit
-    concurrency:
-      group: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }}
-    uses: oleksandrkudin/poc-ndp-test1/.github/workflows/deploy.yaml@main
-    with:
-      environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].environment }}
-      release_version:  ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].version }}
-      #next_environment: ${{ fromJson(needs.units.outputs.units_conf)['poc-ndp-test1'].next_environment }}
+      units_conf: ${{ needs.units.outputs.units_conf }}
 
   #####################
   # Dashboard
   #####################
 
-  dashboard:
-    if: ${{ always() }}
-    needs: [units, poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
-    secrets: inherit
-    strategy:
-      matrix:
-        unit: ${{ fromJson(needs.units.outputs.units) }}
-    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
-    with:
-      job_result: '${{ needs[matrix.unit].result }}'
-      badge_directory: '.github/badges/deployments'
-      pr_auto_prefix: 'auto-deploy-badge'
-      badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
-      unit: ${{ matrix.unit }}
-      environment: ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}
+  # dashboard:
+  #   if: ${{ always() }}
+  #   needs: [units, poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
+  #   secrets: inherit
+  #   strategy:
+  #     matrix:
+  #       unit: ${{ fromJson(needs.units.outputs.units) }}
+  #   uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
+  #   with:
+  #     job_result: '${{ needs[matrix.unit].result }}'
+  #     badge_directory: '.github/badges/deployments'
+  #     pr_auto_prefix: 'auto-deploy-badge'
+  #     badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
+  #     unit: ${{ matrix.unit }}
+  #     environment: ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}
