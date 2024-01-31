@@ -3,8 +3,9 @@ name: meta_deploy
 on: 
   pull_request:
     branches: [main]
-    paths:
-      - environments/**/deploy-config.json
+    # TODO: pr workflow that is referred in branch checks required must no contain path filters. 
+    # paths:
+    #   - environments/**/deploy-config.json
   # TODO: if decided to implement, figure out how to work with commits
   workflow_dispatch:
 
@@ -74,6 +75,7 @@ jobs:
 
   deploy:
     needs: [units]
+    if: ${{ needs.units.outputs.units != '[]' }} 
     secrets: inherit
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
