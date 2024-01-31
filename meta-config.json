@@ -1,0 +1,18 @@
+{
+  "poc-ndp-app1": {
+    "version": "0.0.7",
+    "environment": "test",
+    "deployed_release_version": ""
+  },
+  "poc-ndp-helm-chart1": {
+    "version": "0.0.20",
+    "appVersion": "0.0.7",
+    "environment": "test",
+    "deployed_release_version": ""
+  },
+  "poc-ndp-test1": {
+    "version": "0.0.11",
+    "environment": "dev",
+    "deployed_release_version": ""
+  }
+}
