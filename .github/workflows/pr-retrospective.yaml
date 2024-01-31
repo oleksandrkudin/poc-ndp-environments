@@ -22,11 +22,10 @@ jobs:
           fetch-depth: 0
     
       - run: |
-          #git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* + 
           ls .git/
           git branch
           echo "File list:"
-          git show --pretty="" --name-only origin/${{ github.event.pull_request.base.ref }}..origin/${{ github.head_ref }} | sed 's/^/\t/'
+          git show --pretty="" --name-only origin/${{ github.event.pull_request.base.ref }}..origin/${{ github.head_ref }} | sort --unique | sed 's/^/\t/'
           echo "File content in base branch:"
           git show origin/${{ github.event.pull_request.base.ref }}:environments/dev/poc-ndp-app1/deploy-config.json
           echo "Just 10 commits from HEAD"
@@ -36,3 +35,5 @@ jobs:
           echo "head=${{ github.head_ref }}, ref=${{ github.ref_name }}"
           echo "pr:"
           echo "${{ toJson(github.event.pull_request) }}"
+          echo "env"
+          env
