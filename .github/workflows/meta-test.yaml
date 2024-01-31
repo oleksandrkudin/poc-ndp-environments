@@ -115,8 +115,8 @@ jobs:
         unit: ${{ fromJson(needs.units.outputs.promote_units) }}
     with:
       unit: ${{ matrix.unit }}
-      environment: ${{ needs.units.outputs.promote_units_conf[matrix.unit].next_environment }}
-      release_version: ${{ needs.units.outputs.promote_units_conf[matrix.unit].version }}
+      environment: ${{ fromJson(needs.units.outputs.promote_units_conf)[matrix.unit].next_environment }}
+      release_version: ${{ fromJson(needs.units.outputs.promote_units_conf)[matrix.unit].version }}
 
 
   #####################
