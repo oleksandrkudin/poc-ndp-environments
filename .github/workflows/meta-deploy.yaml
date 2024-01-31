@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
         with:
-          fetch-depth: 0  # TODO: otherwise git show --pretty="" --name-only HEAD show all files
+          fetch-depth: 0
 
       # Implement something like dorny/paths-filter@v2.11.1
 
@@ -37,7 +37,9 @@ jobs:
       # TODO: assumed that unit is changed only in single environment. Is that the case?
       - name: Get deployment configuration
         run: |
-          changed_files=$(git show --pretty="" --name-only HEAD)
+          base_ref="origin/$GITHUB_BASE_REF"
+          head_ref="origin/$GITHUB_HEAD_REF"
+          changed_files=$(git show --pretty="" --name-only $base_ref..$head_ref | sort --unique)
           echo "Changed files:"
           echo -e "$changed_files" | sed 's/^/\t/'
 
@@ -54,8 +56,8 @@ jobs:
             environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
             # next_environment=$(jq --raw-output '.next_environment' $(dirname $config_file)/promote-config.json)
             echo "Get previous deployed version only if it is not the first commit in repository and config file exist in previous commit"
-            if [[ "$(git log -2 --oneline | wc -l)" == "2" && "$(git ls-tree -r HEAD^ --name-only)" =~ (^|$'\n')"$config_file"($'\n'|$) ]]; then
-              deployed_release_version=$(git show HEAD^:$config_file | jq --raw-output '.version')
+            if [[ "$(git ls-tree -r $base_ref --name-only)" =~ (^|$'\n')"$config_file"($'\n'|$) ]]; then
+              deployed_release_version=$(git show $base_ref:$config_file | jq --raw-output '.version')
             fi
             jq --arg environment "$environment" --arg unit "$unit" --arg deployed_release_version "$deployed_release_version" \
               '. |= . * {$unit: {"environment": $environment, "deployed_release_version": $deployed_release_version}}' meta-config.json \
