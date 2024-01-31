@@ -24,5 +24,6 @@ jobs:
       - run: |
           echo "Just 10 commits from HEAD"
           git log -10 --oneline
-          echo "Commit of MERGE_HEAD"
-          git log -1 --oneline MERGE_HEAD
+          echo "git branch --show-current"
+          git branch --show-current
+          echo "head=${{ github.head_ref }}, ref=${{ github.ref_name }}"
