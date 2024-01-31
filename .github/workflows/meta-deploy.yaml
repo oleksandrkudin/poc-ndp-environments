@@ -50,7 +50,7 @@ jobs:
 
             echo "Add whole unit deploy config"
             deploy_config=$(jq --raw-output --compact-output '.' $config_file)
-            jq --arg deploy_config "$deploy_config" --arg unit "$unit" '. |= . * {$unit: $deploy_config | fromjson}' | tee tmp.json && mv tmp.json meta-config.json
+            jq --arg deploy_config "$deploy_config" --arg unit "$unit" '. |= . * {$unit: $deploy_config | fromjson}' meta-config.json | tee tmp.json && mv tmp.json meta-config.json
 
             echo "Add meta parameters"
             environment=$(echo "$config_file" | sed -n 's/environments\/\(.*\)\/\(.*\)\/.*/\1/p')
