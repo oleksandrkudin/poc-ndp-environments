@@ -73,7 +73,7 @@ jobs:
             "poc-ndp-test1": "${{ needs.poc-ndp-test1.result }}"
           }
     #  units_result: ${{ steps.output.outputs.units_result }}
-    # steps:
-    #   - id: output
-    #     run: |
+    steps:
+      - run: |
+          echo "Just providing result from deploy jobs!"
 
