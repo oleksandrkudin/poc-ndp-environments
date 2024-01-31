@@ -97,18 +97,18 @@ jobs:
   # Dashboard
   #####################
 
-  # dashboard:
-  #   if: ${{ always() }}
-  #   needs: [units, poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
-  #   secrets: inherit
-  #   strategy:
-  #     matrix:
-  #       unit: ${{ fromJson(needs.units.outputs.units) }}
-  #   uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
-  #   with:
-  #     job_result: '${{ needs[matrix.unit].result }}'
-  #     badge_directory: '.github/badges/deployments'
-  #     pr_auto_prefix: 'auto-deploy-badge'
-  #     badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
-  #     unit: ${{ matrix.unit }}
-  #     environment: ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}
+  dashboard:
+    if: ${{ always() }}
+    needs: [units, deploy]
+    secrets: inherit
+    strategy:
+      matrix:
+        unit: ${{ fromJson(needs.units.outputs.units) }}
+    uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
+    with:
+      job_result: '${{ fromJson(needs.deploy.outputs.units_result)[matrix.unit] }}'
+      badge_directory: '.github/badges/deployments'
+      pr_auto_prefix: 'auto-deploy-badge'
+      badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
+      unit: ${{ matrix.unit }}
+      environment: ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].environment }}
