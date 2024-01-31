@@ -1,0 +1,28 @@
+name: pr-retrospective
+
+on: 
+  pull_request:
+    branches: [main]
+    paths:
+      - environments/**/deploy-config.json
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  pr-retrospective:
+    runs-on: ubuntu-latest
+    outputs:
+      units: ${{ steps.output.outputs.units }}
+      units_conf: ${{ steps.output.outputs.units_conf }}
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+    
+      - run: |
+          echo "Just 10 commits from HEAD"
+          git log -10 --oneline
+          echo "Commit of MERGE_HEAD"
+          git log -1 --oneline MERGE_HEAD
