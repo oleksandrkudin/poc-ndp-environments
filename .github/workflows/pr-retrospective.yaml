@@ -22,14 +22,16 @@ jobs:
           fetch-depth: 0
     
       - run: |
-          echo "File list:"
-          git show --pretty="" --name-only ${{ github.event.pull_request.base.ref }}..${{ github.head_ref }} | sed 's/^/\t/'
-          echo "File content in base branch:"
-          git show ${{ github.event.pull_request.base.ref }}:environments/dev/poc-ndp-app1/deploy-config.json
+          ls .git/
+          git branch
+          #echo "File list:"
+          # git show --pretty="" --name-only ${{ github.event.pull_request.base.ref }}..${{ github.head_ref }} | sed 's/^/\t/'
+          # echo "File content in base branch:"
+          # git show ${{ github.event.pull_request.base.ref }}:environments/dev/poc-ndp-app1/deploy-config.json
           echo "Just 10 commits from HEAD"
           git log -10 --oneline
           echo "git branch --show-current"
           git branch --show-current
           echo "head=${{ github.head_ref }}, ref=${{ github.ref_name }}"
           echo "pr:"
-          echo "${{ toJson(github.event.pull_request.base.ref) }}"
+          echo "${{ toJson(github.event.pull_request) }}"
