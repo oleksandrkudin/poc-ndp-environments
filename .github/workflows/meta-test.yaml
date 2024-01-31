@@ -60,7 +60,7 @@ jobs:
             units=$tmp_units
 
             echo "Add whole unit deploy config"
-            version=$(jq --raw-output '.version' environments/environment/$unit/deploy-config.json)
+            version=$(jq --raw-output '.version' environments/$environment/$unit/deploy-config.json)
             jq --arg unit "$unit" --arg version "$version" \
               '. |= . * {$unit: {"version": $version}}' meta-config.json \
               | tee tmp.json && mv tmp.json meta-config.json
