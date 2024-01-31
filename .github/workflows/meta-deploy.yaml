@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - environments/**/deploy-config.json
+  # TODO: if decided to implement, figure out how to work with commits
   workflow_dispatch:
 
 permissions:
