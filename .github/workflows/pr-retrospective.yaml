@@ -27,3 +27,5 @@ jobs:
           echo "git branch --show-current"
           git branch --show-current
           echo "head=${{ github.head_ref }}, ref=${{ github.ref_name }}"
+          echo "pr:"
+          echo "${{ toJson(github.event.pull_request) }}"
