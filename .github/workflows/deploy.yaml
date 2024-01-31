@@ -6,7 +6,14 @@ on:
       units_conf:
         type: string
         required: true
-
+    outputs:
+      units_result:
+        value: >
+          {
+            "poc-ndp-helm-chart1": "${{ jobs.poc-ndp-helm-chart1.result }}",
+            "poc-ndp-app1": "${{ jobs.poc-ndp-app1.result }}",
+            "poc-ndp-test1": "${{ jobs.poc-ndp-test1.result }}"
+          }
 
 jobs:
   #####################
@@ -55,3 +62,17 @@ jobs:
       environment: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].environment }}
       release_version:  ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].version }}
       #next_environment: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].next_environment }}
+
+  #####################
+  # Status
+  #####################
+  # status:
+  #   needs: [poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
+  #   if: ${{ always() }}
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     units_result: ${{ steps.output.outputs.units_result }}
+  #   steps:
+  #     - id: output
+  #       run: |
+
