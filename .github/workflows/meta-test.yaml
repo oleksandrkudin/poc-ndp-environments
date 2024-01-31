@@ -112,7 +112,7 @@ jobs:
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/update_environment.yaml@main
     strategy:
       matrix:
-        unit: ${{ needs.units.outputs.promote_units }}
+        unit: ${{ fromJson(needs.units.outputs.promote_units) }}
     with:
       unit: ${{ matrix.unit }}
       environment: ${{ needs.units.outputs.promote_units_conf[matrix.unit].next_environment }}
@@ -125,7 +125,7 @@ jobs:
 
   dashboard:
     if: ${{ always() }}
-    needs: [poc-ndp-test1]
+    needs: [units, poc-ndp-test1]
     secrets: inherit
     strategy:
       matrix:
