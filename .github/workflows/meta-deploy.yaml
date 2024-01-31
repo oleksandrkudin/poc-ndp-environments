@@ -78,6 +78,18 @@ jobs:
     uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
     with:
       units_conf: ${{ needs.units.outputs.units_conf }}
+  
+  status:
+    if: ${{ always() }}
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "deploy status = ${{ needs.deploy.result }}"
+          if [ "${{ needs.deploy.result }}" != "success" ]; then
+            exit 1
+          fi
+
 
   #####################
   # Dashboard
