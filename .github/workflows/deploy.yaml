@@ -8,12 +8,7 @@ on:
         required: true
     outputs:
       units_result:
-        value: >
-          {
-            "poc-ndp-helm-chart1": "${{ jobs.poc-ndp-helm-chart1.result }}",
-            "poc-ndp-app1": "${{ jobs.poc-ndp-app1.result }}",
-            "poc-ndp-test1": "${{ jobs.poc-ndp-test1.result }}"
-          }
+        value: ${{ jobs.result.outputs.units_result }}
 
 jobs:
   #####################
@@ -64,15 +59,21 @@ jobs:
       #next_environment: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].next_environment }}
 
   #####################
-  # Status
+  # Result
   #####################
-  # status:
-  #   needs: [poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
-  #   if: ${{ always() }}
-  #   runs-on: ubuntu-latest
-  #   outputs:
-  #     units_result: ${{ steps.output.outputs.units_result }}
-  #   steps:
-  #     - id: output
-  #       run: |
+  result:
+    needs: [poc-ndp-helm-chart1, poc-ndp-app1, poc-ndp-test1]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    outputs:
+      units_result: >
+          {
+            "poc-ndp-helm-chart1": "${{ needs.poc-ndp-helm-chart1.result }}",
+            "poc-ndp-app1": "${{ needs.poc-ndp-app1.result }}",
+            "poc-ndp-test1": "${{ needs.poc-ndp-test1.result }}"
+          }
+    #  units_result: ${{ steps.output.outputs.units_result }}
+    # steps:
+    #   - id: output
+    #     run: |
 
