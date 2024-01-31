@@ -19,6 +19,7 @@ jobs:
       units: ${{ steps.config.outputs.units_conf }}
       units_conf: ${{ steps.config.outputs.units_conf }}
       promote_units_conf: ${{ steps.promote_config.outputs.promote_units_conf }}
+      promote_units: ${{ steps.promote_config.outputs.promote_units }}
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -86,7 +87,7 @@ jobs:
             fi
           done
           echo "promote_units_conf=$(jq --compact-output '.' meta-promote-config.json)" | tee -a "$GITHUB_OUTPUT"
-          
+          echo "promote_units=$(jq --compact-output 'keys' meta-promote-config.json)" | tee -a "$GITHUB_OUTPUT"
 
   #####################
   # Tests
