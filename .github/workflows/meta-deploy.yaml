@@ -98,7 +98,7 @@ jobs:
   #####################
 
   dashboard:
-    if: ${{ always() }}
+    if: ${{ always() && needs.units.outputs.units != '[]' }}
     needs: [units, deploy]
     secrets: inherit
     strategy:
