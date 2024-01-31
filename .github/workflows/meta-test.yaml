@@ -108,6 +108,7 @@ jobs:
 
   promote:
     needs: [units, poc-ndp-test1]
+    if: ${{ needs.units.outputs.promote_units != '[]' }}
     secrets: inherit
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/update_environment.yaml@main
     strategy:
