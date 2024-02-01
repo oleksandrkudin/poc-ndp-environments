@@ -19,6 +19,7 @@ jobs:
   #####################
   poc-ndp-test1:
     if: ${{ contains(fromJson(inputs.units), 'poc-ndp-test1') }}
+    name: poc-ndp-test1
     #name: "${{ inputs.environment }} : poc-ndp-test1"
     secrets: inherit
     uses: oleksandrkudin/poc-ndp-test1/.github/workflows/test.yaml@main
