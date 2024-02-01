@@ -18,7 +18,7 @@ jobs:
   # Deployment unit
   poc-ndp-helm-chart1:
     if: ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'] != '' }}
-    name: "${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].version }}"
+    #name: "${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].environment }} : poc-ndp-helm-chart1 : ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].version }}"
     secrets: inherit
     concurrency:
       group: ${{ fromJson(inputs.units_conf)['poc-ndp-helm-chart1'].environment }}
@@ -33,7 +33,7 @@ jobs:
   poc-ndp-app1:
     needs: [poc-ndp-helm-chart1]
     if: ${{ fromJson(inputs.units_conf)['poc-ndp-app1'] != '' }}
-    name: "${{ fromJson(inputs.units_conf)['poc-ndp-app1'].environment }} : poc-ndp-app1 : ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].version }}"
+    #name: "${{ fromJson(inputs.units_conf)['poc-ndp-app1'].environment }} : poc-ndp-app1 : ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].version }}"
     secrets: inherit
     concurrency:
       group: ${{ fromJson(inputs.units_conf)['poc-ndp-app1'].environment }}
@@ -48,7 +48,7 @@ jobs:
   # Test unit
   poc-ndp-test1:
     if: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'] != '' }}
-    name: "${{ fromJson(inputs.units_conf)['poc-ndp-test1'].environment }} : poc-ndp-test1 : ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].version }}"
+    #name: "${{ fromJson(inputs.units_conf)['poc-ndp-test1'].environment }} : poc-ndp-test1 : ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].deployed_release_version }} ->  ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].version }}"
     secrets: inherit
     concurrency:
       group: ${{ fromJson(inputs.units_conf)['poc-ndp-test1'].environment }}
