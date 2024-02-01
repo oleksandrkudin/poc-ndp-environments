@@ -107,7 +107,7 @@ jobs:
         unit: ${{ fromJson(needs.units.outputs.units) }}
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
     with:
-      job_result: '${{ fromJson(needs.deploys.outputs.units_result)[matrix.unit] }}'
+      job_result: '${{ fromJson(needs.deploys.outputs.units_result)[matrix.unit].result }}'
       badge_directory: '.github/badges/deployments'
       pr_auto_prefix: 'auto-deploy-badge'
       badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'

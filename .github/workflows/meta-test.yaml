@@ -133,7 +133,7 @@ jobs:
         unit: ${{ fromJson(needs.units.outputs.units) }}
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
     with:
-      job_result: '${{ fromJson(needs.tests.outputs.units_result)[matrix.unit] }}'
+      job_result: '${{ fromJson(needs.tests.outputs.units_result)[matrix.unit].result }}'
       badge_directory: '.github/badges/tests'
       pr_auto_prefix: 'auto-test-badge'
       badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'

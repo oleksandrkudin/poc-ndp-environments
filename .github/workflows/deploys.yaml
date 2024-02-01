@@ -69,14 +69,10 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     outputs:
-      units_result: >
-          {
-            "poc-ndp-helm-chart1": "${{ needs.poc-ndp-helm-chart1.result }}",
-            "poc-ndp-app1": "${{ needs.poc-ndp-app1.result }}",
-            "poc-ndp-test1": "${{ needs.poc-ndp-test1.result }}"
-          }
-    #  units_result: ${{ steps.output.outputs.units_result }}
+      units_result: ${{ steps.result.outputs.units_result }}
     steps:
-      - run: |
-          echo "Just providing result from jobs!"
-
+      - id: result
+        run: |
+          echo "Delete outputs field for each job in needs and return modified needs."
+          units_result=$(echo "${{ needs }}" | jq --compact-output '. | to_entries | .[] | {(.key): .value | del(.outputs)}' | jq --compact-output --slurp 'add')
+          echo "units_result=$units_result" | tee -a "$GITHUB_OUTPUT"
