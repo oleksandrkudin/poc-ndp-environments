@@ -93,13 +93,13 @@ jobs:
   # Tests
   #####################
 
-  poc-ndp-test1:
+  tests:
     needs: [units]
-    if: ${{ contains(fromJson(needs.units.outputs.units), 'poc-ndp-test1') }}
-    name: "${{ needs.units.outputs.environment }} : poc-ndp-test1"
+    if: ${{ needs.units.outputs.units != '[]' }} 
     secrets: inherit
-    uses: oleksandrkudin/poc-ndp-test1/.github/workflows/test.yaml@main
+    uses: oleksandrkudin/poc-ndp-environments/.github/workflows/tests.yaml@main
     with:
+      units: ${{ needs.units.outputs.units }}
       environment: ${{ needs.units.outputs.environment }}
 
   #####################
@@ -107,7 +107,7 @@ jobs:
   #####################
 
   promote:
-    needs: [units, poc-ndp-test1]
+    needs: [units, tests]
     if: ${{ needs.units.outputs.promote_units != '[]' }}
     secrets: inherit
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/update_environment.yaml@main
@@ -126,14 +126,14 @@ jobs:
 
   dashboard:
     if: ${{ always() }}
-    needs: [units, poc-ndp-test1]
+    needs: [units, tests]
     secrets: inherit
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.units) }}
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
     with:
-      job_result: '${{ needs[matrix.unit].result }}'
+      job_result: '${{ fromJson(needs.tests.outputs.units_result)[matrix.unit] }}'
       badge_directory: '.github/badges/tests'
       pr_auto_prefix: 'auto-test-badge'
       badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'

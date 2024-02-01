@@ -75,5 +75,5 @@ jobs:
     #  units_result: ${{ steps.output.outputs.units_result }}
     steps:
       - run: |
-          echo "Just providing result from deploy jobs!"
+          echo "Just providing result from jobs!"
 

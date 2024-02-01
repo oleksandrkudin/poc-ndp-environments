@@ -1,0 +1,42 @@
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      units:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+    outputs:
+      units_result:
+        value: ${{ jobs.result.outputs.units_result }}
+
+jobs:
+  #####################
+  # Test Units
+  #####################
+  poc-ndp-test1:
+    if: ${{ contains(fromJson(inputs.units), 'poc-ndp-test1') }}
+    #name: "${{ inputs.environment }} : poc-ndp-test1"
+    secrets: inherit
+    uses: oleksandrkudin/poc-ndp-test1/.github/workflows/test.yaml@main
+    with:
+      environment: ${{ inputs.environment }}
+
+  #####################
+  # Result
+  #####################
+  result:
+    needs: [poc-ndp-test1]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    outputs:
+      units_result: >
+          {
+            "poc-ndp-test1": "${{ needs.poc-ndp-test1.result }}"
+          }
+    steps:
+      - run: |
+          echo "Just providing result from jobs!"

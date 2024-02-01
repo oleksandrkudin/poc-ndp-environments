@@ -73,22 +73,23 @@ jobs:
           units=$(jq --compact-output 'keys' meta-config.json)
           echo "units=$units" | tee -a "$GITHUB_OUTPUT"
 
-  deploy:
+  deploys:
     needs: [units]
     if: ${{ needs.units.outputs.units != '[]' }} 
     secrets: inherit
-    uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploy.yaml@main
+    uses: oleksandrkudin/poc-ndp-environments/.github/workflows/deploys.yaml@main
     with:
       units_conf: ${{ needs.units.outputs.units_conf }}
   
+  # This job is used as check in PRs
   status:
     if: ${{ always() }}
-    needs: [deploy]
+    needs: [deploys]
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "deploy status = ${{ needs.deploy.result }}"
-          if [[ ! "success, skipped" =~ "${{ needs.deploy.result }}" ]]; then
+          echo "deploy status = ${{ needs.deploys.result }}"
+          if [[ ! "success, skipped" =~ "${{ needs.deploys.result }}" ]]; then
             exit 1
           fi
 
@@ -99,14 +100,14 @@ jobs:
 
   dashboard:
     if: ${{ always() && needs.units.outputs.units != '[]' }}
-    needs: [units, deploy]
+    needs: [units, deploys]
     secrets: inherit
     strategy:
       matrix:
         unit: ${{ fromJson(needs.units.outputs.units) }}
     uses: oleksandrkudin/poc-ndp-workflows/.github/workflows/job_badge.yaml@main
     with:
-      job_result: '${{ fromJson(needs.deploy.outputs.units_result)[matrix.unit] }}'
+      job_result: '${{ fromJson(needs.deploys.outputs.units_result)[matrix.unit] }}'
       badge_directory: '.github/badges/deployments'
       pr_auto_prefix: 'auto-deploy-badge'
       badge_label: '${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].deployed_release_version }} -> ${{ fromJson(needs.units.outputs.units_conf)[matrix.unit].version }}'
