@@ -71,8 +71,9 @@ jobs:
     outputs:
       units_result: ${{ steps.result.outputs.units_result }}
     steps:
+      # TODO: used in two places - reusable action?
       - id: result
         run: |
           echo "Delete outputs field for each job in needs and return modified needs."
-          units_result=$(echo "${{ needs }}" | jq --compact-output '. | to_entries | .[] | {(.key): .value | del(.outputs)}' | jq --compact-output --slurp 'add')
+          units_result=$(echo '${{ toJson(needs) }}' | jq --exit-status --compact-output '. | to_entries | .[] | {(.key): .value | del(.outputs)}' | jq --exit-status --compact-output --slurp 'add')
           echo "units_result=$units_result" | tee -a "$GITHUB_OUTPUT"
